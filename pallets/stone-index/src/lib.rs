@@ -9,24 +9,24 @@ use frame_system::ensure_signed;
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// https://substrate.dev/docs/en/knowledgebase/runtime/frame
 use sp_runtime::traits::{AtLeast32Bit, AtLeast32BitUnsigned, Member};
+use sp_std::prelude::*;
+
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Encode, Decode, Default, Clone, PartialEq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
 pub struct IndexComponent<AssetId> {
     asset_id: AssetId,
     weight: u32,
 }
 
-#[derive(Encode, Decode, Default, Clone, PartialEq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
 pub struct Index<AssetId> {
     id: AssetId,
-    name: String,
+    name: Vec<u8>,
     components: Vec<IndexComponent<AssetId>>,
 }
 
@@ -88,7 +88,7 @@ decl_module! {
         fn deposit_event() = default;
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn add_index(origin, id: T::AssetId, name: String, components: Vec<IndexComponent<T::AssetId>>) {
+        pub fn add_index(origin, id: T::AssetId, name: Vec<u8>, components: Vec<IndexComponent<T::AssetId>>) {
             let _who = ensure_signed(origin)?;
 
             <Indexes<T>>::insert(&id, Index {
