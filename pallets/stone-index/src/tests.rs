@@ -35,12 +35,14 @@ fn add_index() {
 #[test]
 fn buy_or_sell_non_existing_index() {
 	new_test_ext().execute_with(|| {
+		Assets::mint(10001, TEST_ACCOUNT_ID, 10000);
+		Assets::mint(10002, TEST_ACCOUNT_ID, 100);
 		assert_noop!(
-			StoneIndex::buy_index(Origin::signed(TEST_ACCOUNT_ID), 999999999, TEST_INDEX_ID),
+			StoneIndex::buy_index(Origin::signed(TEST_ACCOUNT_ID), 999999999, 1),
 			Error::<TestRuntime>::IndexNotExist
 		);
 		assert_noop!(
-			StoneIndex::sell_index(Origin::signed(TEST_ACCOUNT_ID), 999999999, TEST_INDEX_ID),
+			StoneIndex::sell_index(Origin::signed(TEST_ACCOUNT_ID), 999999999, 1),
 			Error::<TestRuntime>::IndexNotExist
 		);
 	});
@@ -49,6 +51,8 @@ fn buy_or_sell_non_existing_index() {
 #[test]
 fn buy_too_much_index() {
 	new_test_ext().execute_with(|| {
+		Assets::mint(10001, TEST_ACCOUNT_ID, 10000);
+		Assets::mint(10002, TEST_ACCOUNT_ID, 100);
 		assert_ok!(StoneIndex::buy_index(
 			Origin::signed(TEST_ACCOUNT_ID),
 			TEST_INDEX_ID,
@@ -64,6 +68,8 @@ fn buy_too_much_index() {
 #[test]
 fn sell_too_much_index() {
 	new_test_ext().execute_with(|| {
+		Assets::mint(10001, TEST_ACCOUNT_ID, 10000);
+		Assets::mint(10002, TEST_ACCOUNT_ID, 100);
 		assert_noop!(
 			StoneIndex::sell_index(Origin::signed(TEST_ACCOUNT_ID), TEST_INDEX_ID, 100000000),
 			Error::<TestRuntime>::InsufficientIndexBalance
@@ -74,6 +80,8 @@ fn sell_too_much_index() {
 #[test]
 fn buy_and_sell_index() {
 	new_test_ext().execute_with(|| {
+		Assets::mint(10001, TEST_ACCOUNT_ID, 10000);
+		Assets::mint(10002, TEST_ACCOUNT_ID, 100);
 		assert_ok!(StoneIndex::buy_index(
 			Origin::signed(TEST_ACCOUNT_ID),
 			TEST_INDEX_ID,
@@ -83,8 +91,8 @@ fn buy_and_sell_index() {
 			StoneIndex::index_balances((TEST_INDEX_ID, TEST_ACCOUNT_ID)),
 			5
 		);
-		assert_eq!(StoneIndex::asset_balances((10001, TEST_ACCOUNT_ID)), 9990);
-		assert_eq!(StoneIndex::asset_balances((10002, TEST_ACCOUNT_ID)), 95);
+		assert_eq!(Assets::balance(10001, TEST_ACCOUNT_ID), 9990);
+		assert_eq!(Assets::balance(10002, TEST_ACCOUNT_ID), 95);
 
 		assert_ok!(StoneIndex::sell_index(
 			Origin::signed(TEST_ACCOUNT_ID),
@@ -95,7 +103,7 @@ fn buy_and_sell_index() {
 			StoneIndex::index_balances((TEST_INDEX_ID, TEST_ACCOUNT_ID)),
 			4
 		);
-		assert_eq!(StoneIndex::asset_balances((10001, TEST_ACCOUNT_ID)), 9992);
-		assert_eq!(StoneIndex::asset_balances((10002, TEST_ACCOUNT_ID)), 96);
+		assert_eq!(Assets::balance(10001, TEST_ACCOUNT_ID), 9992);
+		assert_eq!(Assets::balance(10002, TEST_ACCOUNT_ID), 96);
 	});
 }

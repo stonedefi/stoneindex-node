@@ -51,15 +51,20 @@ impl system::Trait for TestRuntime {
 	type SystemWeightInfo = ();
 }
 
-impl Trait for TestRuntime {
+impl pallet_assets::Trait for TestRuntime {
 	type Event = ();
 	type Balance = u64;
-	type AssetId = u64;
+	type AssetId = u32;
+}
+
+impl Trait for TestRuntime {
+	type Event = ();
 }
 
 pub type StoneIndex = Module<TestRuntime>;
+pub type Assets = pallet_assets::Module<TestRuntime>;
 
-pub const TEST_INDEX_ID: u64 = 1;
+pub const TEST_INDEX_ID: u32 = 1;
 pub const TEST_ACCOUNT_ID: u64 = 99999;
 
 // Build genesis storage according to the mock runtime.
@@ -81,11 +86,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 					},
 				],
 			},
-		)],
-		asset_balances: vec![
-			((10001, TEST_ACCOUNT_ID), 10000),
-			((10002, TEST_ACCOUNT_ID), 100),
-		],
+		)]
 	};
 	config.build_storage().unwrap().into()
 }

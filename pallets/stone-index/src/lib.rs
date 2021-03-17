@@ -2,13 +2,9 @@
 
 use frame_support::codec::{Decode, Encode};
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get, Parameter,
+    decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get,
 };
 use frame_system::ensure_signed;
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// https://substrate.dev/docs/en/knowledgebase/runtime/frame
-use sp_runtime::traits::{AtLeast32Bit, AtLeast32BitUnsigned, Member};
 use sp_std::prelude::*;
 
 #[cfg(test)]
@@ -30,12 +26,8 @@ pub struct Index<AssetId> {
     components: Vec<IndexComponent<AssetId>>,
 }
 
-pub trait Trait: frame_system::Trait {
+pub trait Trait: pallet_assets::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-
-    type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy;
-
-    type AssetId: Parameter + AtLeast32Bit + Default + Copy;
 }
 
 // The pallet's runtime storage items.
@@ -47,7 +39,6 @@ decl_storage! {
     trait Store for Module<T: Trait> as StoneIndex {
         Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => Index<T::AssetId>;
         IndexBalances get(fn index_balances): map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
-        AssetBalances get(fn asset_balances) config(): map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
     }
 }
 
@@ -57,8 +48,8 @@ decl_event!(
     pub enum Event<T>
     where
         AccountId = <T as frame_system::Trait>::AccountId,
-        AssetId = <T as Trait>::AssetId,
-        Balance = <T as Trait>::Balance,
+        AssetId = <T as pallet_assets::Trait>::AssetId,
+        Balance = <T as pallet_assets::Trait>::Balance,
     {
         // [index_id, amount, who]
         BuyIndex(AssetId, Balance, AccountId),
@@ -106,13 +97,13 @@ decl_module! {
 
             for comp in index.components.iter() {
                 let comp_value = amount * T::Balance::from(comp.weight);
-                let asset_balance = Self::asset_balances((comp.asset_id, &origin));
+                let asset_balance = pallet_assets::Module::<T>::balance(comp.asset_id, origin.clone());
                 ensure!(asset_balance >= comp_value, Error::<T>::InsufficientAssetBalance);
             }
 
             for comp in index.components.iter() {
                 let comp_value = amount * T::Balance::from(comp.weight);
-                <AssetBalances<T>>::mutate((comp.asset_id, &origin), |balance| *balance -= comp_value);
+                pallet_assets::Module::<T>::burn(comp.asset_id, origin.clone(), comp_value);
             }
             <IndexBalances<T>>::mutate((&index_id, &origin), |balance| *balance += amount);
 
@@ -129,7 +120,7 @@ decl_module! {
 
             for comp in index.components.iter() {
                 let comp_value = amount * T::Balance::from(comp.weight);
-                <AssetBalances<T>>::mutate((comp.asset_id, &origin), |balance| *balance += comp_value);
+                pallet_assets::Module::<T>::mint(comp.asset_id, origin.clone(), comp_value);
             }
             <IndexBalances<T>>::mutate((&index_id, &origin), |balance| *balance -= amount);
 
