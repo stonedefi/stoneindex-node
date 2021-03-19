@@ -5,6 +5,7 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get,
 };
 use frame_system::ensure_signed;
+use sp_runtime::traits::{Zero, StaticLookup};
 use sp_std::prelude::*;
 
 #[cfg(test)]
@@ -54,6 +55,7 @@ decl_event!(
         // [index_id, amount, who]
         BuyIndex(AssetId, Balance, AccountId),
         SellIndex(AssetId, Balance, AccountId),
+		TransferIndex(AssetId, AccountId, AccountId, Balance),
     }
 );
 
@@ -64,6 +66,7 @@ decl_error! {
         IndexNotExist,
         InsufficientAssetBalance,
         InsufficientIndexBalance,
+        TransferAmountZero
     }
 }
 
@@ -126,6 +129,24 @@ decl_module! {
 
             Self::deposit_event(RawEvent::SellIndex(index_id, amount, origin));
         }
+
+        #[weight = 0]
+		fn transfer(origin,
+			#[compact] id: T::AssetId,
+			target: <T::Lookup as StaticLookup>::Source,
+			#[compact] amount: T::Balance
+		) {
+			let origin = ensure_signed(origin)?;
+			let origin_account = (id, origin.clone());
+			let origin_balance = <IndexBalances<T>>::get(&origin_account);
+			let target = T::Lookup::lookup(target)?;
+			ensure!(!amount.is_zero(), Error::<T>::TransferAmountZero);
+			ensure!(origin_balance >= amount, Error::<T>::InsufficientIndexBalance);
+
+			Self::deposit_event(RawEvent::TransferIndex(id, origin, target.clone(), amount));
+			<IndexBalances<T>>::insert(origin_account, origin_balance - amount);
+			<IndexBalances<T>>::mutate((id, target), |balance| *balance += amount);
+		}
     }
 }
 
