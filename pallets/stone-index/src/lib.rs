@@ -55,7 +55,7 @@ decl_event!(
         // [index_id, amount, who]
         BuyIndex(AssetId, Balance, AccountId),
         SellIndex(AssetId, Balance, AccountId),
-		TransferIndex(AssetId, AccountId, AccountId, Balance),
+        TransferIndex(AssetId, AccountId, AccountId, Balance),
     }
 );
 
@@ -131,22 +131,21 @@ decl_module! {
         }
 
         #[weight = 0]
-		fn transfer(origin,
-			#[compact] id: T::AssetId,
-			target: <T::Lookup as StaticLookup>::Source,
-			#[compact] amount: T::Balance
-		) {
-			let origin = ensure_signed(origin)?;
-			let origin_account = (id, origin.clone());
-			let origin_balance = <IndexBalances<T>>::get(&origin_account);
-			let target = T::Lookup::lookup(target)?;
-			ensure!(!amount.is_zero(), Error::<T>::TransferAmountZero);
-			ensure!(origin_balance >= amount, Error::<T>::InsufficientIndexBalance);
+        pub fn transfer(origin,
+            #[compact] id: T::AssetId,
+            target: <T::Lookup as StaticLookup>::Source,
+            #[compact] amount: T::Balance
+        ) {
+            let origin = ensure_signed(origin)?;
+            let origin_account = (id, origin.clone());
+            let origin_balance = <IndexBalances<T>>::get(&origin_account);
+            let target = T::Lookup::lookup(target)?;
+            ensure!(!amount.is_zero(), Error::<T>::TransferAmountZero);
+            ensure!(origin_balance >= amount, Error::<T>::InsufficientIndexBalance);
 
-			Self::deposit_event(RawEvent::TransferIndex(id, origin, target.clone(), amount));
-			<IndexBalances<T>>::insert(origin_account, origin_balance - amount);
-			<IndexBalances<T>>::mutate((id, target), |balance| *balance += amount);
-		}
+            Self::deposit_event(RawEvent::TransferIndex(id, origin.clone(), target.clone(), amount));
+            Self::_transfer(id, origin, target, amount);
+        }
     }
 }
 
@@ -155,5 +154,14 @@ impl<T: Trait> Module<T> {
 
     pub fn get_index(id: &T::AssetId) -> Index<T::AssetId> {
         Self::indexes(id)
+    }
+
+    pub fn _mint(index_id: T::AssetId, account: T::AccountId, amount: T::Balance) {
+        <IndexBalances<T>>::mutate((index_id, account), |balance| *balance += amount);
+    }
+
+    pub fn _transfer(index_id: T::AssetId, from: T::AccountId, to: T::AccountId, amount: T::Balance) {
+        <IndexBalances<T>>::mutate((index_id, from), |balance| *balance -= amount);
+        <IndexBalances<T>>::mutate((index_id, to), |balance| *balance += amount);
     }
 }
