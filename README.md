@@ -1,191 +1,153 @@
-# Substrate Node Template
+# Web3 Open Grant project
+***Note*** This is project is a Proof of Concept to realize the proposal to Web3 Open Grant and should not be used for any production or any real crypto funds
+***Active development*** All the new developments happen in develop branch
 
-A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
+* **Project Name:** Stone Index on Substrate
+* **Team Name:** stonedefi
+* **Payment Address:** bc1qwyq4h8q07vjm9gm9mxjk5gew5hr06lk9ca5t0t
 
-## Getting Started
+## Project Overview :page_facing_up: 
 
-This project contains some configuration files to help get started :hammer_and_wrench:
+### Overview
 
-### Rust Setup
+Stone team proposes a STONE INDEX project which aims to track the portfolio of multiple digital assets across different blockchains, the index is designed to mimic the composition and performance of selected digital assets, particularly we are focusing on yield bearing assets (such as liquid staked tokens). As far as our knowledge goes, this is the first index on the Polkadot ecosystem, and yield bearing assets is a new asset type that creates stable rewards for holders. Stone has the vision of building the index defined by yields and expanding the horizon to index derivatives which further add to the asset offering of the Polkadot ecosystem.
 
-Follow the [Rust setup instructions](./doc/rust-setup.md) before using the included Makefile to
-build the Node Template.
+The Stone team's vision is to bring solid yield to token holders, while index is a favorite investment option to normal users. There are quite some great index implementations in the Ethereum ecosystem, e.g. Tokensets, Balancer Exchange etc., and the Stone team sees a good opportunity to bring such an efficient crypto asset management instrument into the exciting Polkadot ecosystem. 
 
-### Makefile
+The index will be built on Substrate and join the coming Polkadot parachain ecosystem in future to increase the range of cross-chain assets to bridge staked assets from other chains to Polkadot.
 
-This project uses a [Makefile](Makefile) to document helpful commands and make it easier to execute
-them. Get started by running these [`make`](https://www.gnu.org/software/make/manual/make.html)
-targets:
+Thanks to Polkadot's cross-chain protocol makes them the perfect blockchain to build an index of multiple crypto assets. We do see an exponential uptrend of Defi on the Polkadot ecosystem. Such indexes can be used in lending protocols and DEXes for users and traders to build further markets.
 
-1. `make init` - Run the [init script](scripts/init.sh) to configure the Rust toolchain for
-   [WebAssembly compilation](https://substrate.dev/docs/en/knowledgebase/getting-started/#webassembly-compilation).
-1. `make run` - Build and launch this project in development mode.
+Stone Index is a decentralized instrument running on Stone platform (https://stonedefi.io), Stone platform is a yield maximisation protocol and asset aggregation platform of multiple strategies including Ethereum(both 1.0 and 2.0), Polkadot, Solana and so on, Stone Index will be a latest strategy to be added into Stone platform and open to all Stone users
 
-The init script and Makefile both specify the version of the
-[Rust nightly compiler](https://substrate.dev/docs/en/knowledgebase/getting-started/#rust-nightly-toolchain)
-that this project depends on.
+The project will be broken down into multiple phases and we'll focus on the first phase, which is dedicated to liquid staked DOT, e.g. aDOT, bDOT and etc. from various providers, to create iDOT, which combines the total liquidity of the fragmented markets
 
-### Build
+### Project Details 
 
-The `make run` command will perform an initial build. Use the following command to build the node
-without launching it:
+#### High level architecture
 
-```sh
-make build
+![Stone index architecture](https://github.com/RockX-SG/stone-index/blob/master/images/stone-index-architecture.jpg)
+
+There are 3 high level components for Stone Index:
+
+* Stone platform on Substrate(UI/UX and indexed basket management), including WebUI and a set of Substrate pallets
+* One or more parachain on Polkadot for providing liquidity of staking tokens, e.g. aDOT, bDOT
+* One parachain based DEX on Polkadot for Polkadot's interoperability
+
+#### System flow
+
+![Stone index sys flow](https://github.com/RockX-SG/stone-index/blob/master/images/stone-index-system-flow.png)
+
+Stone Index essentially is a collateralised asset that allows the community to combine different tokens and form an index basket. Having an indexed basket makes diversified investment easier for the masses.
+
+* Create an index
+The creator of the index create a Substrate pallet that defines the composition of the basket. The Stone Team will manage these baskets(aDOT, bDOT and other liquid tokens) and indexes(iDOT) in this proposal.
+
+* Purchase an index
+Users can select to purchase from the indexed basket. They can purchase with aDOT, bDOT which would then automatically convert it to the underlying basket composition using DEX.
+
+* Redeem an index
+Alternatively if user wants to redeem the underlying index, they can choose to deposit the index token back into the Stone Platform. Subsequently the underlying tokens would be sent back to the user’s wallet.
+
+#### Use case diagram
+
+![Stone index use case flow](https://github.com/RockX-SG/stone-index/blob/master/images/stone-index-use-case.png)
+
+There are 2 types of actors in Stone Index: 
+* Admin: The user to manage indexed baskets 
+* User: Any user who holds the desired tokens 
+
+### Runtime module/chain - Indexed basket management module
+#### Public exposed methods
+
+```
+// To create an index with 2 tokens and weight per token with an unique name, and return with the newly created index ID
+create_index(origin, name Vec<u32>, address1 Address, weight1 u8, address2, weight2 u8) -> Result<i64, Error>
+
+// To update the details of an existing index
+update_index(origin, index_id u32, name Vec<u32>, address1 Address, weight1 u8, address2, weight2 u8)
+
+// To purchase an index with desired token(deduct tokens from user), and mint an index token(The token will be sent to the user address)
+* purchase_index(origin, index_id i64, amount u32) -> Result(Error)
+
+// To redeem token with index token, it will burn the index token and transfer the underlying token back to user address
+* redeem_index(origin, index_id, amount u32)
+
 ```
 
-### Embedded Docs
+#### Runtime storage 
 
-Once the project has been built, the following command can be used to explore all parameters and
-subcommands:
-
-```sh
-./target/release/node-template -h
+```
+  trait Store for Module<T: Trait> as StoneIndex {
+      Index: map haser => StoneIndex;
+  }
 ```
 
-## Run
+#### MockUI
 
-The `make run` command will launch a temporary node and its state will be discarded after you
-terminate the process. After the project has been built, there are other ways to launch the node.
+![Stone Index for DOT](https://github.com/RockX-SG/stone-index/blob/master/images/stone-index-ui.jpg)
 
-### Single-Node Development Chain
+## Team :busts_in_silhouette:
 
-This command will start the single-node development chain with persistent state:
+### Team members
+* Calvin Zhou
+* Tony Chew
+* Raphael Yu
 
-```bash
-./target/release/node-template --dev
-```
+* Website
+https://stonedefi.io
 
-Purge the development chain's state:
+### Legal Structure 
+Individual
 
-```bash
-./target/release/node-template purge-chain --dev
-```
+### Team's experience
 
-Start the development chain with detailed logging:
+* Calvin is the Head of Engineering of RockX, he has worked on large-scale production systems for more than a decade, including  a secure payment gateway with tens of millions customers across Southeast Asian countries and a high performance cryptocurrency trading platform using NodeJS, Java, MongoDB, and RabbitMQ. Currently, he leads a team to build the RockX digital asset services platform on blockchain, which is written in Golang and NodeJS, and running on Kubernetes.
 
-```bash
-RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/node-template -lruntime=debug --dev
-```
+* Tony is a Senior Software Developer from RockX, he has worked in blockchain, fintech, adtech and cybersecurity industries for the past 13 years. His full stack development experience consists of UI / UX, frontend, backend development and server side deployment. At RockX, he is building a new digital asset platform and the languages he uses day to day are React, Redux, MySQL, MongoDB, NodeJS, Python & GoLang
 
-### Multi-Node Local Testnet
+* Raphael has 8 years IT industry experience and 3 years blockchain experience. Expertise in the technologies of smart contract and defi project and familiar with the major developer ecosystem. Have experience of leading several Ethereum Dapps engineering projects. 
 
-If you want to see the multi-node consensus algorithm in action, refer to
-[our Start a Private Network tutorial](https://substrate.dev/docs/en/tutorials/start-a-private-network/).
+### Team Code Repos
 
-## Template Structure
+### Team LinkedIn Profiles
+* https://www.linkedin.com/in/calvin-zhou-3b249517/
+* https://sg.linkedin.com/in/tonychew1986
 
-A Substrate project such as this consists of a number of components that are spread across a few
-directories.
+## Development Roadmap :nut_and_bolt: 
 
-### Node
+### Overview
+* **Total Estimated Duration:** 3 weeks
+* **Full-time equivalent (FTE):**  3 FTE
+* **Total Costs:** 0.3 BTC
 
-A blockchain node is an application that allows users to participate in a blockchain network.
-Substrate-based blockchain nodes expose a number of capabilities:
+### Milestone 1 -  Liquid staked DOT token
 
--   Networking: Substrate nodes use the [`libp2p`](https://libp2p.io/) networking stack to allow the
-    nodes in the network to communicate with one another.
--   Consensus: Blockchains must have a way to come to
-    [consensus](https://substrate.dev/docs/en/knowledgebase/advanced/consensus) on the state of the
-    network. Substrate makes it possible to supply custom consensus engines and also ships with
-    several consensus mechanisms that have been built on top of
-    [Web3 Foundation research](https://research.web3.foundation/en/latest/polkadot/NPoS/index.html).
--   RPC Server: A remote procedure call (RPC) server is used to interact with Substrate nodes.
+In the grant program, the Stone Team aims to provide liquidity of staked tokens on Polkadot ecosystem, and the special LP token which bounds to staked assets, like DOT token. We are aware that there are multiple teams are actively working on Polkadot ecosystem and more exciting projects on the roadmap, we'll focus on DOT-bound staked assets like aDOT first for the milestone 1
+We'll also provide an easy-to-use web based UI that connects to the chrome based DOT wallet, and user can buy/sell the index using their DOT tokens easily, this UI will be part of https://stonedefi.io
 
-There are several files in the `node` directory - take special note of the following:
+| Number | Deliverable | Specification |
+| ------------- | ------------- | ------------- |
+| 0a. | License | Apache 2.0 |
+| 0b. | Documentation | We will provide both inline documentation of the code and a basic tutorial that explains how a user can (for example) spin up one of our Substrate nodes. Once the node is up, it will be possible to send test transactions that will show how the new functionality works. |
+| 0c. | Testing Guide | The code will have unit-test coverage (min. 70%) to ensure functionality and robustness. In the guide we will describe how to run these tests | 
+| 0d. | Article/Tutorial | Publish tutorials and documentation in different channels, e.g. Stone Medium and other social media platforms 
+| 1. | UI/UX for Stone Platform | Update and add a new UI component that allow user to buy/sell stone index using different crypto assets, DOT for milestone 1 |  
+| 2. | Indexed basket management | An indexed basket management module is a set of Substrate pallet which allows creation and update the indexed basket, as well as mint and burn index token function | 
+| 3. | DEX integration | We will build the DEX trade function on top of another Polkadot Program [PolkaDex](https://github.com/Polkadex-Substrate/Polkadex/tree/master)  |  
 
--   [`chain_spec.rs`](./node/src/chain_spec.rs): A
-    [chain specification](https://substrate.dev/docs/en/knowledgebase/integrate/chain-spec) is a
-    source code file that defines a Substrate chain's initial (genesis) state. Chain specifications
-    are useful for development and testing, and critical when architecting the launch of a
-    production chain. Take note of the `development_config` and `testnet_genesis` functions, which
-    are used to define the genesis state for the local development chain configuration. These
-    functions identify some
-    [well-known accounts](https://substrate.dev/docs/en/knowledgebase/integrate/subkey#well-known-keys)
-    and use them to configure the blockchain's initial state.
--   [`service.rs`](./node/src/service.rs): This file defines the node implementation. Take note of
-    the libraries that this file imports and the names of the functions it invokes. In particular,
-    there are references to consensus-related topics, such as the
-    [longest chain rule](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#longest-chain-rule),
-    the [Aura](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#aura) block authoring
-    mechanism and the
-    [GRANDPA](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#grandpa) finality
-    gadget.
+## Future Plans
+Upon the completion of Milestone 1, the team will potentially add more functions like:
 
-After the node has been [built](#build), refer to the embedded documentation to learn more about the
-capabilities and configuration parameters that it exposes:
+* Introduce the governance token for the governance purpose
+* Allow user to create their own indexed basket using the governance token they earned, and get rewards of trading fees
 
-```shell
-./target/release/node-template --help
-```
+Stone Index will be part of Stone Platform, and this grant program is the very first attempt of extent to Polkadot ecosystem in Stone Platform. The Stone team will continuously add more valuable instruments, and the team is aware that more and more teams and projects are rushing into Polkadot ecosystem, so we'll keep an eye on the new initiatives, and onboard those legitimate assets once they are ready
 
-### Runtime
+## Additional Information :heavy_plus_sign: 
+RockX(https://rockx.com) founded by veterans and hardcore developers in Blockchain space, Rockx has been developing critical tools and applications for various Blockchains. RockX team is actively involved in building a better blockchain community and won quite some grants last year, the 2 examples are: 
+* Algorand IDE(https://algorand.rockx.com/)
+* Oasis Web Wallet(https://oasis-wallet.rockx.com). 
 
-In Substrate, the terms
-"[runtime](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#runtime)" and
-"[state transition function](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#stf-state-transition-function)"
-are analogous - they refer to the core logic of the blockchain that is responsible for validating
-blocks and executing the state changes they define. The Substrate project in this repository uses
-the [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) framework to construct a
-blockchain runtime. FRAME allows runtime developers to declare domain-specific logic in modules
-called "pallets". At the heart of FRAME is a helpful
-[macro language](https://substrate.dev/docs/en/knowledgebase/runtime/macros) that makes it easy to
-create pallets and flexibly compose them to create blockchains that can address
-[a variety of needs](https://www.substrate.io/substrate-users/).
+RockX helps the Stone Team to build the Stone Platform and bring Stone Platform to multiple blockchain platforms, so that allow Stone Platform users with one stop investment solution and the best user experience.
 
-Review the [FRAME runtime implementation](./runtime/src/lib.rs) included in this template and note
-the following:
-
--   This file configures several pallets to include in the runtime. Each pallet configuration is
-    defined by a code block that begins with `impl $PALLET_NAME::Trait for Runtime`.
--   The pallets are composed into a single runtime by way of the
-    [`construct_runtime!`](https://crates.parity.io/frame_support/macro.construct_runtime.html)
-    macro, which is part of the core
-    [FRAME Support](https://substrate.dev/docs/en/knowledgebase/runtime/frame#support-library)
-    library.
-
-### Pallets
-
-The runtime in this project is constructed using many FRAME pallets that ship with the
-[core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a
-template pallet that is [defined in the `pallets`](./pallets/template/src/lib.rs) directory.
-
-A FRAME pallet is compromised of a number of blockchain primitives:
-
--   Storage: FRAME defines a rich set of powerful
-    [storage abstractions](https://substrate.dev/docs/en/knowledgebase/runtime/storage) that makes
-    it easy to use Substrate's efficient key-value database to manage the evolving state of a
-    blockchain.
--   Dispatchables: FRAME pallets define special types of functions that can be invoked (dispatched)
-    from outside of the runtime in order to update its state.
--   Events: Substrate uses [events](https://substrate.dev/docs/en/knowledgebase/runtime/events) to
-    notify users of important changes in the runtime.
--   Errors: When a dispatchable fails, it returns an error.
--   Trait: The `Trait` configuration interface is used to define the types and parameters upon which
-    a FRAME pallet depends.
-
-### Run in Docker
-
-First, install [Docker](https://docs.docker.com/get-docker/) and
-[Docker Compose](https://docs.docker.com/compose/install/).
-
-Then run the following command to start a single node development chain.
-
-```bash
-./scripts/docker_run.sh
-```
-
-This command will firstly compile your code, and then start a local development network. You can
-also replace the default command (`cargo build --release && ./target/release/node-template --dev --ws-external`)
-by appending your own. A few useful ones are as follow.
-
-```bash
-# Run Substrate node without re-compiling
-./scripts/docker_run.sh ./target/release/node-template --dev --ws-external
-
-# Purge the local dev chain
-./scripts/docker_run.sh ./target/release/node-template purge-chain --dev
-
-# Check whether the code is compilable
-./scripts/docker_run.sh cargo check
-```
