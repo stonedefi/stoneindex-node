@@ -38,8 +38,8 @@ pub use frame_support::{
 	},
 };
 
-/// Import the template pallet.
-pub use pallet_template;
+pub use pallet_stone_index;
+pub use pallet_assets;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -261,8 +261,14 @@ impl pallet_sudo::Trait for Runtime {
 	type Call = Call;
 }
 
+impl pallet_assets::Trait for Runtime {
+	type Event = Event;
+	type Balance = u64;
+	type AssetId = u32;
+}
+
 /// Configure the template pallet in pallets/template.
-impl pallet_template::Trait for Runtime {
+impl pallet_stone_index::Trait for Runtime {
 	type Event = Event;
 }
 
@@ -282,7 +288,8 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		// Include the custom logic from the template pallet in the runtime.
-		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
+		Assets: pallet_assets::{Module, Call, Storage, Event<T>},
+		StoneIndex: pallet_stone_index::{Module, Call, Storage, Event<T>},
 	}
 );
 
