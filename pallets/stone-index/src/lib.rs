@@ -15,16 +15,16 @@ mod mock;
 mod tests;
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
-pub struct IndexComponent<AssetId> {
+pub struct StoneIndexComponent<AssetId> {
     asset_id: AssetId,
     weight: u32,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
-pub struct Index<AssetId> {
+pub struct StoneIndex<AssetId> {
     id: AssetId,
     name: Vec<u8>,
-    components: Vec<IndexComponent<AssetId>>,
+    components: Vec<StoneIndexComponent<AssetId>>,
 }
 
 pub trait Trait: pallet_assets::Trait {
@@ -37,8 +37,8 @@ decl_storage! {
     // A unique name is used to ensure that the pallet's storage items are isolated.
     // This name may be updated, but each pallet in the runtime must use a unique name.
     // ---------------------------------vvvvvvvvvvvvvv
-    trait Store for Module<T: Trait> as StoneIndex {
-        Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => Index<T::AssetId>;
+    trait Store for Module<T: Trait> as StoneIndexPallet {
+        Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => StoneIndex<T::AssetId>;
         IndexBalances get(fn index_balances): map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
     }
 }
@@ -82,10 +82,10 @@ decl_module! {
         fn deposit_event() = default;
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn add_index(origin, id: T::AssetId, name: Vec<u8>, components: Vec<IndexComponent<T::AssetId>>) {
+        pub fn add_index(origin, #[compact] id: T::AssetId, name: Vec<u8>, components: Vec<StoneIndexComponent<T::AssetId>>) {
             let _who = ensure_signed(origin)?;
 
-            <Indexes<T>>::insert(&id, Index {
+            <Indexes<T>>::insert(&id, StoneIndex {
                 id,
                 name,
                 components
@@ -93,7 +93,7 @@ decl_module! {
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn buy_index(origin, index_id: T::AssetId, amount: T::Balance) {
+        pub fn buy_index(origin, #[compact] index_id: T::AssetId, #[compact] amount: T::Balance) {
             let origin = ensure_signed(origin)?;
             ensure!(<Indexes<T>>::contains_key(&index_id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&index_id);
@@ -114,7 +114,7 @@ decl_module! {
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn sell_index(origin, index_id: T::AssetId, amount: T::Balance) {
+        pub fn sell_index(origin, #[compact] index_id: T::AssetId, #[compact] amount: T::Balance) {
             let origin = ensure_signed(origin)?;
             ensure!(<Indexes<T>>::contains_key(&index_id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&index_id);
@@ -130,7 +130,7 @@ decl_module! {
             Self::deposit_event(RawEvent::SellIndex(index_id, amount, origin));
         }
 
-        #[weight = 0]
+        #[weight = 10_000 + T::DbWeight::get().writes(1)]
         pub fn transfer(origin,
             #[compact] id: T::AssetId,
             target: <T::Lookup as StaticLookup>::Source,
@@ -152,7 +152,7 @@ decl_module! {
 impl<T: Trait> Module<T> {
     // Public immutables
 
-    pub fn get_index(id: &T::AssetId) -> Index<T::AssetId> {
+    pub fn get_index(id: &T::AssetId) -> StoneIndex<T::AssetId> {
         Self::indexes(id)
     }
 
