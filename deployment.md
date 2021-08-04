@@ -1,4 +1,4 @@
-# Substrate Node Template
+# StoneIndex-node is a project forked from SubStrate Template
 
 A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
 
