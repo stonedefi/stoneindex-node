@@ -1,4 +1,4 @@
-use crate::{GenesisConfig, Index, IndexComponent, Module, Trait};
+use crate::{GenesisConfig, StoneIndex, StoneIndexComponent, Module, Trait};
 use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
 use frame_system as system;
 use sp_core::H256;
@@ -61,7 +61,7 @@ impl Trait for TestRuntime {
 	type Event = ();
 }
 
-pub type StoneIndex = Module<TestRuntime>;
+pub type StoneIndexPallet = Module<TestRuntime>;
 pub type Assets = pallet_assets::Module<TestRuntime>;
 
 pub const TEST_INDEX_ID: u32 = 1;
@@ -72,15 +72,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let config: GenesisConfig<TestRuntime> = GenesisConfig {
 		indexes: vec![(
 			TEST_INDEX_ID,
-			Index {
+			StoneIndex {
 				id: TEST_INDEX_ID,
 				name: "FirstIndex".as_bytes().to_vec(),
 				components: vec![
-					IndexComponent {
+					StoneIndexComponent {
 						asset_id: 10001,
 						weight: 2,
 					},
-					IndexComponent {
+					StoneIndexComponent {
 						asset_id: 10002,
 						weight: 1,
 					},

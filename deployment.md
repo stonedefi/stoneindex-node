@@ -1,6 +1,4 @@
-# Web3 Open Grant project
-***Note*** This is project is a Proof of Concept to realize the proposal to Web3 Open Grant and should not be used for any production or any real crypto funds
-***Active development*** All the new developments happen in develop branch
+# StoneIndex-node is a project forked from SubStrate Template
 
 * **Project Name:** Stone Index on Substrate
 * **Team Name:** stonedefi
