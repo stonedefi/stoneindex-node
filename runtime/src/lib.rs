@@ -263,7 +263,7 @@ impl pallet_sudo::Trait for Runtime {
 
 impl pallet_assets::Trait for Runtime {
 	type Event = Event;
-	type Balance = u64;
+	type Balance = Balance;
 	type AssetId = u32;
 }
 

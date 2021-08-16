@@ -62,10 +62,13 @@ decl_event!(
 // Errors inform users that something went wrong.
 decl_error! {
     pub enum Error for Module<T: Trait> {
-        /// Error names should be descriptive.
+        /// The id of the index isn't existing.
         IndexNotExist,
+        /// The balances of the underlying assets are insufficient.
         InsufficientAssetBalance,
+        /// The balance of the index is insufficient.
         InsufficientIndexBalance,
+        /// Transfer amount should be non-zero.
         TransferAmountZero
     }
 }
