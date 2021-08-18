@@ -21,10 +21,11 @@ pub struct StoneIndexComponent<AssetId> {
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
-pub struct StoneIndex<AssetId> {
+pub struct StoneIndex<AssetId, AccountId> {
     id: AssetId,
     name: Vec<u8>,
     components: Vec<StoneIndexComponent<AssetId>>,
+    owner: AccountId,
 }
 
 pub trait Trait: pallet_assets::Trait {
@@ -38,7 +39,7 @@ decl_storage! {
     // This name may be updated, but each pallet in the runtime must use a unique name.
     // ---------------------------------vvvvvvvvvvvvvv
     trait Store for Module<T: Trait> as StoneIndexPallet {
-        Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => StoneIndex<T::AssetId>;
+        Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => StoneIndex<T::AssetId, T::AccountId>;
         IndexBalances get(fn index_balances): map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
     }
 }
@@ -69,7 +70,9 @@ decl_error! {
         /// The balance of the index is insufficient.
         InsufficientIndexBalance,
         /// Transfer amount should be non-zero.
-        TransferAmountZero
+        TransferAmountZero,
+        /// The index can only be updated by its owner
+        NotTheOwner
     }
 }
 
@@ -91,7 +94,23 @@ decl_module! {
             <Indexes<T>>::insert(&id, StoneIndex {
                 id,
                 name,
-                components
+                components,
+                owner: _who
+            });
+        }
+
+        #[weight = 10_000 + T::DbWeight::get().writes(1)]
+        pub fn update_index(origin, #[compact] id: T::AssetId, name: Vec<u8>, components: Vec<StoneIndexComponent<T::AssetId>>) {
+            let _who = ensure_signed(origin)?;
+            ensure!(<Indexes<T>>::contains_key(&id), Error::<T>::IndexNotExist);
+            let index = Self::indexes(&id);
+            ensure!(_who == index.owner, Error::<T>::NotTheOwner);
+
+            <Indexes<T>>::insert(&id, StoneIndex {
+                id,
+                name,
+                components,
+                owner: _who
             });
         }
 
@@ -155,7 +174,7 @@ decl_module! {
 impl<T: Trait> Module<T> {
     // Public immutables
 
-    pub fn get_index(id: &T::AssetId) -> StoneIndex<T::AssetId> {
+    pub fn get_index(id: &T::AssetId) -> StoneIndex<T::AssetId, T::AccountId> {
         Self::indexes(id)
     }
 

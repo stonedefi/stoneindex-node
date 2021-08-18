@@ -85,6 +85,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 						weight: 1,
 					},
 				],
+				owner: TEST_ACCOUNT_ID,
 			},
 		)]
 	};

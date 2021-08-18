@@ -17,6 +17,7 @@ fn add_index() {
 					weight: 5,
 				},
 			],
+			owner: TEST_ACCOUNT_ID,
 		};
 		// Dispatch a signed extrinsic.
 		assert_ok!(StoneIndexPallet::add_index(
@@ -28,6 +29,32 @@ fn add_index() {
 		let out_index = StoneIndexPallet::get_index(&test_index.id);
 		assert_eq!(out_index.id, 100);
 		assert_eq!(std::str::from_utf8(&out_index.name).unwrap(), "test");
+		debug::info!("The index is {:?}", out_index);
+	});
+}
+
+#[test]
+fn update_index() {
+	new_test_ext().execute_with(|| {
+		let test_index = StoneIndexPallet::indexes(TEST_INDEX_ID);
+
+		assert_noop!(StoneIndexPallet::update_index(
+			Origin::signed(123456),
+			test_index.id,
+			"Another Name".as_bytes().to_vec(),
+			test_index.components.clone()
+		), Error::<TestRuntime>::NotTheOwner);
+
+		assert_ok!(StoneIndexPallet::update_index(
+			Origin::signed(TEST_ACCOUNT_ID),
+			test_index.id,
+			"Another Name".as_bytes().to_vec(),
+			test_index.components.clone()
+		));
+
+		let out_index = StoneIndexPallet::get_index(&test_index.id);
+		assert_eq!(out_index.id, 1);
+		assert_eq!(std::str::from_utf8(&out_index.name).unwrap(), "Another Name");
 		debug::info!("The index is {:?}", out_index);
 	});
 }
