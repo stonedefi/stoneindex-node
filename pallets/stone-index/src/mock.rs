@@ -1,32 +1,39 @@
-use crate::{GenesisConfig, StoneIndex, StoneIndexComponent, Module, Trait};
-use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
-use frame_system as system;
+use crate as pallet_stone_index;
+use pallet_stone_index::{StoneIndex, StoneIndexComponent, Config};
+use frame_support::{parameter_types, construct_runtime};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
 };
 
-impl_outer_origin! {
-	pub enum Origin for TestRuntime {}
-}
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
+type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 // Configure a mock runtime to test the pallet.
+construct_runtime!(
+	pub enum TestRuntime where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		Assets: pallet_assets::{Module, Call, Event<T>},
+		StoneIndexPallet: pallet_stone_index::{Module, Call, Storage, Event<T>},
+	}
+);
 
-#[derive(Clone, Eq, PartialEq)]
-pub struct TestRuntime;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub const MaximumBlockWeight: Weight = 1024;
-	pub const MaximumBlockLength: u32 = 2 * 1024;
-	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+	pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Trait for TestRuntime {
+impl frame_system::Config for TestRuntime {
 	type BaseCallFilter = ();
+	type BlockWeights = ();
+	type BlockLength = ();
 	type Origin = Origin;
-	type Call = ();
+	type Call = Call;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -36,40 +43,36 @@ impl system::Trait for TestRuntime {
 	type Header = Header;
 	type Event = ();
 	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
 	type DbWeight = ();
-	type BlockExecutionWeight = ();
-	type ExtrinsicBaseWeight = ();
-	type MaximumExtrinsicWeight = MaximumBlockWeight;
-	type MaximumBlockLength = MaximumBlockLength;
-	type AvailableBlockRatio = AvailableBlockRatio;
 	type Version = ();
-	type PalletInfo = ();
+	type PalletInfo = PalletInfo;
 	type AccountData = ();
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
+	type SS58Prefix = SS58Prefix;
 }
 
-impl pallet_assets::Trait for TestRuntime {
+impl pallet_assets::Config for TestRuntime {
 	type Event = ();
 	type Balance = u64;
 	type AssetId = u32;
 }
 
-impl Trait for TestRuntime {
-	type Event = ();
+parameter_types! {
+	pub const CustodialAccount: u64 = 250;
 }
 
-pub type StoneIndexPallet = Module<TestRuntime>;
-pub type Assets = pallet_assets::Module<TestRuntime>;
+impl Config for TestRuntime {
+	type Event = ();
+}
 
 pub const TEST_INDEX_ID: u32 = 1;
 pub const TEST_ACCOUNT_ID: u64 = 99999;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let config: GenesisConfig<TestRuntime> = GenesisConfig {
+	let config: pallet_stone_index::GenesisConfig<TestRuntime> = pallet_stone_index::GenesisConfig {
 		indexes: vec![(
 			TEST_INDEX_ID,
 			StoneIndex {

@@ -139,9 +139,9 @@ use frame_system::ensure_signed;
 use sp_runtime::traits::One;
 
 /// The module configuration trait.
-pub trait Trait: frame_system::Trait {
+pub trait Config: frame_system::Config {
 	/// The overarching event type.
-	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 
 	/// The units in which we record balances.
 	type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy;
@@ -151,7 +151,7 @@ pub trait Trait: frame_system::Trait {
 }
 
 decl_module! {
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		type Error = Error<T>;
 
 		fn deposit_event() = default;
@@ -226,9 +226,9 @@ decl_module! {
 
 decl_event! {
 	pub enum Event<T> where
-		<T as frame_system::Trait>::AccountId,
-		<T as Trait>::Balance,
-		<T as Trait>::AssetId,
+		<T as frame_system::Config>::AccountId,
+		<T as Config>::Balance,
+		<T as Config>::AssetId,
 	{
 		/// Some assets were issued. \[asset_id, owner, total_supply\]
 		Issued(AssetId, AccountId, Balance),
@@ -240,7 +240,7 @@ decl_event! {
 }
 
 decl_error! {
-	pub enum Error for Module<T: Trait> {
+	pub enum Error for Module<T: Config> {
 		/// Transfer amount should be non-zero
 		AmountZero,
 		/// Account balance must be greater than or equal to the transfer amount
@@ -251,7 +251,7 @@ decl_error! {
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Assets {
+	trait Store for Module<T: Config> as Assets {
 		/// The number of units of assets held by any given account.
 		Balances: map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
 		/// The next asset identifier up for grabs.
@@ -264,7 +264,7 @@ decl_storage! {
 }
 
 // The main implementation block for the module.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
 	// Public immutables
 
 	/// Get the asset `id` balance of `who`.
@@ -293,28 +293,38 @@ impl<T: Trait> Module<T> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate as pallet_assets;
 
-	use frame_support::{impl_outer_origin, assert_ok, assert_noop, parameter_types, weights::Weight};
+	use frame_support::{construct_runtime, assert_ok, assert_noop, parameter_types};
 	use sp_core::H256;
-	use sp_runtime::{Perbill, traits::{BlakeTwo256, IdentityLookup}, testing::Header};
+	use sp_runtime::{traits::{BlakeTwo256, IdentityLookup}, testing::Header};
 
-	impl_outer_origin! {
-		pub enum Origin for Test where system = frame_system {}
-	}
+	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+	type Block = frame_system::mocking::MockBlock<Test>;
+	
+	// Configure a mock runtime to test the pallet.
+	construct_runtime!(
+		pub enum Test where
+			Block = Block,
+			NodeBlock = Block,
+			UncheckedExtrinsic = UncheckedExtrinsic,
+		{
+			System: frame_system::{Module, Call, Config, Storage, Event<T>},
+			Assets: pallet_assets::{Module, Call, Event<T>},
+		}
+	);
 
-	#[derive(Clone, Eq, PartialEq)]
-	pub struct Test;
 	parameter_types! {
 		pub const BlockHashCount: u64 = 250;
-		pub const MaximumBlockWeight: Weight = 1024;
-		pub const MaximumBlockLength: u32 = 2 * 1024;
-		pub const AvailableBlockRatio: Perbill = Perbill::one();
+		pub const SS58Prefix: u8 = 42;
 	}
-	impl frame_system::Trait for Test {
+	impl frame_system::Config for Test {
 		type BaseCallFilter = ();
+		type BlockWeights = ();
+		type BlockLength = ();
 		type Origin = Origin;
 		type Index = u64;
-		type Call = ();
+		type Call = Call;
 		type BlockNumber = u64;
 		type Hash = H256;
 		type Hashing = BlakeTwo256;
@@ -323,26 +333,21 @@ mod tests {
 		type Header = Header;
 		type Event = ();
 		type BlockHashCount = BlockHashCount;
-		type MaximumBlockWeight = MaximumBlockWeight;
 		type DbWeight = ();
-		type BlockExecutionWeight = ();
-		type ExtrinsicBaseWeight = ();
-		type MaximumExtrinsicWeight = MaximumBlockWeight;
-		type AvailableBlockRatio = AvailableBlockRatio;
-		type MaximumBlockLength = MaximumBlockLength;
 		type Version = ();
-		type PalletInfo = ();
+		type PalletInfo = PalletInfo;
 		type AccountData = ();
 		type OnNewAccount = ();
 		type OnKilledAccount = ();
 		type SystemWeightInfo = ();
+		type SS58Prefix = SS58Prefix;
 	}
-	impl Trait for Test {
+
+	impl pallet_assets::Config for Test {
 		type Event = ();
 		type Balance = u64;
 		type AssetId = u32;
 	}
-	type Assets = Module<Test>;
 
 	fn new_test_ext() -> sp_io::TestExternalities {
 		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()

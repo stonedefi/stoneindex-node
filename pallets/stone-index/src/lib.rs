@@ -28,8 +28,8 @@ pub struct StoneIndex<AssetId, AccountId> {
     owner: AccountId,
 }
 
-pub trait Trait: pallet_assets::Trait {
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+pub trait Config: pallet_assets::Config {
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 // The pallet's runtime storage items.
@@ -38,7 +38,8 @@ decl_storage! {
     // A unique name is used to ensure that the pallet's storage items are isolated.
     // This name may be updated, but each pallet in the runtime must use a unique name.
     // ---------------------------------vvvvvvvvvvvvvv
-    trait Store for Module<T: Trait> as StoneIndexPallet {
+    trait Store for Module<T: Config> as StoneIndexPallet {
+        CustodialAccount: T::AccountId;
         Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => StoneIndex<T::AssetId, T::AccountId>;
         IndexBalances get(fn index_balances): map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
     }
@@ -49,9 +50,9 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Trait>::AccountId,
-        AssetId = <T as pallet_assets::Trait>::AssetId,
-        Balance = <T as pallet_assets::Trait>::Balance,
+        AccountId = <T as frame_system::Config>::AccountId,
+        AssetId = <T as pallet_assets::Config>::AssetId,
+        Balance = <T as pallet_assets::Config>::Balance,
     {
         // [index_id, amount, who]
         BuyIndex(AssetId, Balance, AccountId),
@@ -62,7 +63,7 @@ decl_event!(
 
 // Errors inform users that something went wrong.
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// The id of the index isn't existing.
         IndexNotExist,
         /// The balances of the underlying assets are insufficient.
@@ -80,7 +81,7 @@ decl_error! {
 // These functions materialize as "extrinsics", which are often compared to transactions.
 // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         // Errors must be initialized if they are used by the pallet.
         type Error = Error<T>;
 
@@ -116,40 +117,40 @@ decl_module! {
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
         pub fn buy_index(origin, #[compact] index_id: T::AssetId, #[compact] amount: T::Balance) {
-            let origin = ensure_signed(origin)?;
+            let from = ensure_signed(origin.clone())?;
             ensure!(<Indexes<T>>::contains_key(&index_id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&index_id);
 
             for comp in index.components.iter() {
                 let comp_value = amount * T::Balance::from(comp.weight);
-                let asset_balance = pallet_assets::Module::<T>::balance(comp.asset_id, origin.clone());
+                let asset_balance = pallet_assets::Module::<T>::balance(comp.asset_id, from.clone());
                 ensure!(asset_balance >= comp_value, Error::<T>::InsufficientAssetBalance);
             }
 
             for comp in index.components.iter() {
                 let comp_value = amount * T::Balance::from(comp.weight);
-                pallet_assets::Module::<T>::burn(comp.asset_id, origin.clone(), comp_value);
+                pallet_assets::Module::<T>::burn(comp.asset_id, from.clone(), comp_value);
             }
-            <IndexBalances<T>>::mutate((&index_id, &origin), |balance| *balance += amount);
+            <IndexBalances<T>>::mutate((&index_id, &from), |balance| *balance += amount);
 
-            Self::deposit_event(RawEvent::BuyIndex(index_id, amount, origin));
+            Self::deposit_event(RawEvent::BuyIndex(index_id, amount, from));
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
         pub fn sell_index(origin, #[compact] index_id: T::AssetId, #[compact] amount: T::Balance) {
-            let origin = ensure_signed(origin)?;
+            let from = ensure_signed(origin)?;
             ensure!(<Indexes<T>>::contains_key(&index_id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&index_id);
-            let index_balance = Self::index_balances((&index_id, &origin));
+            let index_balance = Self::index_balances((&index_id, &from));
             ensure!(index_balance >= amount, Error::<T>::InsufficientIndexBalance);
 
             for comp in index.components.iter() {
                 let comp_value = amount * T::Balance::from(comp.weight);
-                pallet_assets::Module::<T>::mint(comp.asset_id, origin.clone(), comp_value);
+                pallet_assets::Module::<T>::mint(comp.asset_id, from.clone(), comp_value);
             }
-            <IndexBalances<T>>::mutate((&index_id, &origin), |balance| *balance -= amount);
+            <IndexBalances<T>>::mutate((&index_id, &from), |balance| *balance -= amount);
 
-            Self::deposit_event(RawEvent::SellIndex(index_id, amount, origin));
+            Self::deposit_event(RawEvent::SellIndex(index_id, amount, from));
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
@@ -171,7 +172,7 @@ decl_module! {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     // Public immutables
 
     pub fn get_index(id: &T::AssetId) -> StoneIndex<T::AssetId, T::AccountId> {
