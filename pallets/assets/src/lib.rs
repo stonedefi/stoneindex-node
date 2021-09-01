@@ -278,13 +278,13 @@ impl<T: Config> Module<T> {
 	}
 
 	pub fn mint(id: T::AssetId, who: T::AccountId, amount: T::Balance) {
-		Self::deposit_event(RawEvent::Issued(id, who.clone(), amount));
+		// Self::deposit_event(RawEvent::Issued(id, who.clone(), amount));
 		<Balances<T>>::mutate((id, who), |balance| *balance += amount);
 		<TotalSupply<T>>::mutate(id, |total| *total += amount);
 	}
 
 	pub fn burn(id: T::AssetId, who: T::AccountId, amount: T::Balance) {
-		Self::deposit_event(RawEvent::Destroyed(id, who.clone(), amount));
+		// Self::deposit_event(RawEvent::Destroyed(id, who.clone(), amount));
 		<Balances<T>>::mutate((id, who), |balance| *balance -= amount);
 		<TotalSupply<T>>::mutate(id, |total| *total -= amount);
 	}
