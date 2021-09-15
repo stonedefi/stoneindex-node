@@ -65,6 +65,7 @@ parameter_types! {
 
 impl Config for TestRuntime {
 	type Event = ();
+	type IndexId = u32;
 }
 
 pub const TEST_INDEX_ID: u32 = 1;

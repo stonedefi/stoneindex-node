@@ -274,6 +274,7 @@ impl pallet_assets::Config for Runtime {
 /// Configure the template pallet in pallets/template.
 impl pallet_stone_index::Config for Runtime {
 	type Event = Event;
+	type IndexId = u32;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

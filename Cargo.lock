@@ -3919,7 +3919,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stone-index"
-version = "3.0.0"
+version = "0.3.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

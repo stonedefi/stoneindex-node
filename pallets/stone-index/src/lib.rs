@@ -2,10 +2,11 @@
 
 use frame_support::codec::{Decode, Encode};
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get,
+    Parameter, decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get,
 };
 use frame_system::ensure_signed;
-use sp_runtime::traits::{Zero, StaticLookup};
+use sp_runtime::traits::{Zero, StaticLookup, AtLeast32BitUnsigned};
+
 use sp_std::prelude::*;
 
 #[cfg(test)]
@@ -21,8 +22,8 @@ pub struct StoneIndexComponent<AssetId> {
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
-pub struct StoneIndex<AssetId, AccountId> {
-    id: AssetId,
+pub struct StoneIndex<IndexId, AssetId, AccountId> {
+    id: IndexId,
     name: Vec<u8>,
     components: Vec<StoneIndexComponent<AssetId>>,
     owner: AccountId,
@@ -30,6 +31,7 @@ pub struct StoneIndex<AssetId, AccountId> {
 
 pub trait Config: pallet_assets::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+    type IndexId: Parameter + AtLeast32BitUnsigned + Default + Copy;
 }
 
 // The pallet's runtime storage items.
@@ -39,9 +41,8 @@ decl_storage! {
     // This name may be updated, but each pallet in the runtime must use a unique name.
     // ---------------------------------vvvvvvvvvvvvvv
     trait Store for Module<T: Config> as StoneIndexPallet {
-        CustodialAccount: T::AccountId;
-        Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::AssetId => StoneIndex<T::AssetId, T::AccountId>;
-        IndexBalances get(fn index_balances): map hasher(blake2_128_concat) (T::AssetId, T::AccountId) => T::Balance;
+        Indexes get(fn indexes) config(): map hasher(blake2_128_concat) T::IndexId => StoneIndex<T::IndexId, T::AssetId, T::AccountId>;
+        IndexBalances get(fn index_balances): map hasher(blake2_128_concat) (T::IndexId, T::AccountId) => T::Balance;
     }
 }
 
@@ -50,14 +51,14 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Config>::AccountId,
-        AssetId = <T as pallet_assets::Config>::AssetId,
+        IndexId = <T as Config>::IndexId,
         Balance = <T as pallet_assets::Config>::Balance,
+        AccountId = <T as frame_system::Config>::AccountId,
     {
         // [index_id, amount, who]
-        BuyIndex(AssetId, Balance, AccountId),
-        SellIndex(AssetId, Balance, AccountId),
-        TransferIndex(AssetId, AccountId, AccountId, Balance),
+        BuyIndex(IndexId, Balance, AccountId),
+        SellIndex(IndexId, Balance, AccountId),
+        TransferIndex(IndexId, AccountId, AccountId, Balance),
     }
 );
 
@@ -89,7 +90,7 @@ decl_module! {
         fn deposit_event() = default;
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn add_index(origin, #[compact] id: T::AssetId, name: Vec<u8>, components: Vec<StoneIndexComponent<T::AssetId>>) {
+        pub fn add_index(origin, #[compact] id: T::IndexId, name: Vec<u8>, components: Vec<StoneIndexComponent<T::AssetId>>) {
             let _who = ensure_signed(origin)?;
 
             <Indexes<T>>::insert(&id, StoneIndex {
@@ -101,7 +102,7 @@ decl_module! {
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn update_index(origin, #[compact] id: T::AssetId, name: Vec<u8>, components: Vec<StoneIndexComponent<T::AssetId>>) {
+        pub fn update_index(origin, #[compact] id: T::IndexId, name: Vec<u8>, components: Vec<StoneIndexComponent<T::AssetId>>) {
             let _who = ensure_signed(origin)?;
             ensure!(<Indexes<T>>::contains_key(&id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&id);
@@ -116,7 +117,7 @@ decl_module! {
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn buy_index(origin, #[compact] index_id: T::AssetId, #[compact] amount: T::Balance) {
+        pub fn buy_index(origin, #[compact] index_id: T::IndexId, #[compact] amount: T::Balance) {
             let from = ensure_signed(origin.clone())?;
             ensure!(<Indexes<T>>::contains_key(&index_id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&index_id);
@@ -137,7 +138,7 @@ decl_module! {
         }
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
-        pub fn sell_index(origin, #[compact] index_id: T::AssetId, #[compact] amount: T::Balance) {
+        pub fn sell_index(origin, #[compact] index_id: T::IndexId, #[compact] amount: T::Balance) {
             let from = ensure_signed(origin)?;
             ensure!(<Indexes<T>>::contains_key(&index_id), Error::<T>::IndexNotExist);
             let index = Self::indexes(&index_id);
@@ -155,7 +156,7 @@ decl_module! {
 
         #[weight = 10_000 + T::DbWeight::get().writes(1)]
         pub fn transfer(origin,
-            #[compact] id: T::AssetId,
+            #[compact] id: T::IndexId,
             target: <T::Lookup as StaticLookup>::Source,
             #[compact] amount: T::Balance
         ) {
@@ -175,15 +176,15 @@ decl_module! {
 impl<T: Config> Module<T> {
     // Public immutables
 
-    pub fn get_index(id: &T::AssetId) -> StoneIndex<T::AssetId, T::AccountId> {
+    pub fn get_index(id: &T::IndexId) -> StoneIndex<T::IndexId, T::AssetId, T::AccountId> {
         Self::indexes(id)
     }
 
-    pub fn _mint(index_id: T::AssetId, account: T::AccountId, amount: T::Balance) {
+    pub fn _mint(index_id: T::IndexId, account: T::AccountId, amount: T::Balance) {
         <IndexBalances<T>>::mutate((index_id, account), |balance| *balance += amount);
     }
 
-    pub fn _transfer(index_id: T::AssetId, from: T::AccountId, to: T::AccountId, amount: T::Balance) {
+    pub fn _transfer(index_id: T::IndexId, from: T::AccountId, to: T::AccountId, amount: T::Balance) {
         <IndexBalances<T>>::mutate((index_id, from), |balance| *balance -= amount);
         <IndexBalances<T>>::mutate((index_id, to), |balance| *balance += amount);
     }
