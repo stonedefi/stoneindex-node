@@ -17,16 +17,16 @@ mod tests;
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
 pub struct StoneIndexComponent<AssetId> {
-    asset_id: AssetId,
-    weight: u32,
+    pub asset_id: AssetId,
+    pub weight: u32,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Debug)]
 pub struct StoneIndex<IndexId, AssetId, AccountId> {
-    id: IndexId,
-    name: Vec<u8>,
-    components: Vec<StoneIndexComponent<AssetId>>,
-    owner: AccountId,
+    pub id: IndexId,
+    pub name: Vec<u8>,
+    pub components: Vec<StoneIndexComponent<AssetId>>,
+    pub owner: AccountId,
 }
 
 pub trait Config: pallet_assets::Config {
