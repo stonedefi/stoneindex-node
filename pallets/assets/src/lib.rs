@@ -133,10 +133,9 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{Parameter, decl_module, decl_event, decl_storage, decl_error, ensure};
-use sp_runtime::traits::{Member, AtLeast32Bit, AtLeast32BitUnsigned, Zero, StaticLookup};
 use frame_system::ensure_signed;
-use sp_runtime::traits::One;
+use frame_support::{Parameter, decl_module, decl_event, decl_storage, decl_error, ensure};
+use sp_runtime::traits::{Member, AtLeast32Bit, AtLeast32BitUnsigned, One, Zero, StaticLookup, MaybeSerializeDeserialize};
 
 /// The module configuration trait.
 pub trait Config: frame_system::Config {
@@ -147,7 +146,7 @@ pub trait Config: frame_system::Config {
 	type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy;
 
 	/// The arithmetic type of asset identifier.
-	type AssetId: Parameter + AtLeast32Bit + Default + Copy;
+	type AssetId: Parameter + AtLeast32Bit + Default + Copy + MaybeSerializeDeserialize;
 }
 
 decl_module! {
