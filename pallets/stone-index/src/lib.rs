@@ -5,7 +5,7 @@ use frame_support::{
     Parameter, decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get,
 };
 use frame_system::ensure_signed;
-use sp_runtime::traits::{Zero, StaticLookup, AtLeast32BitUnsigned};
+use sp_runtime::traits::{Zero, StaticLookup, AtLeast32BitUnsigned, MaybeSerializeDeserialize};
 
 use sp_std::prelude::*;
 
@@ -31,7 +31,7 @@ pub struct StoneIndex<IndexId, AssetId, AccountId> {
 
 pub trait Config: pallet_assets::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
-    type IndexId: Parameter + AtLeast32BitUnsigned + Default + Copy;
+    type IndexId: Parameter + AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize;
 }
 
 // The pallet's runtime storage items.
